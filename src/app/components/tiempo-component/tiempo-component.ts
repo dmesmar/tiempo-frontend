@@ -1,29 +1,30 @@
-
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { TiempoService } from '../../service/tiempo-service';
 import { MunicipioDTO } from '../../models/municipio/municipio-model';
-import {FormControl, FormsModule, ReactiveFormsModule} from '@angular/forms';
-import {Observable, of} from 'rxjs';
-import {catchError, debounceTime, distinctUntilChanged, map, startWith, switchMap, tap} from 'rxjs/operators';
-import {AsyncPipe} from '@angular/common';
-import {MatAutocompleteModule} from '@angular/material/autocomplete';
-import {MatInputModule} from '@angular/material/input';
-import {MatFormFieldModule} from '@angular/material/form-field';
+import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { Observable, of } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators';
+import { AsyncPipe } from '@angular/common';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatInputModule } from '@angular/material/input';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { PrecipitacionDTO, PrediccionDTO } from '../../models/prediccion/prediccion-model';
 
 @Component({
   selector: 'app-tiempo-component',
-  imports: [FormsModule,
+  imports: [
+    FormsModule,
     MatFormFieldModule,
     MatInputModule,
     MatAutocompleteModule,
     ReactiveFormsModule,
-    AsyncPipe,],
+    AsyncPipe,
+  ],
   templateUrl: './tiempo-component.html',
   styleUrl: './tiempo-component.css',
 })
 export class TiempoComponent implements OnInit {
-  
+
   private tiempoService = inject(TiempoService);
   protected readonly municipios = signal<MunicipioDTO[]>([]);
   protected readonly prediccion = signal<PrediccionDTO | null>(null);
@@ -36,17 +37,17 @@ export class TiempoComponent implements OnInit {
   myControl = new FormControl<string | MunicipioDTO | null>('');
   protected grupoVisible = signal<Record<number, boolean>>({ 1: false, 2: false, 3: false });
 
-  
   protected gradosSeleccionados: string | null = null;
   filteredOptions!: Observable<MunicipioDTO[]>;
-  
+
   ngOnInit(): void {
-      this.filteredOptions = this.myControl.valueChanges.pipe(
-        startWith(''),
-        debounceTime(750),
-        switchMap(valor => this.buscarMunicipios(typeof valor === 'string' ? valor : valor?.nombre || ''))
-      );
+    this.filteredOptions = this.myControl.valueChanges.pipe(
+      startWith(''),
+      debounceTime(750),
+      switchMap(valor => this.buscarMunicipios(typeof valor === 'string' ? valor : valor?.nombre || ''))
+    );
   }
+
   protected existeGrupo1(p: PrediccionDTO): boolean {
     return p.probPrecipitacion.some(x => x.periodo === '00-24');
   }
@@ -74,40 +75,34 @@ export class TiempoComponent implements OnInit {
     return p.probPrecipitacion.filter(x => periodosPorGrupo[n].includes(x.periodo));
   }
 
-  
-
   private buscarMunicipios(nombre: string): Observable<MunicipioDTO[]> {
-      if (!nombre) {
+    if (!nombre) {
+      return of([]);
+    }
+    return this.tiempoService.getListaMunicipios(nombre).pipe(
+      tap(() => this.errorMunicipios.set(false)),
+      catchError(err => {
+        this.errorMunicipios.set(true);
+        this.errorMunicipiosMsg.set(err.error?.message ?? 'No se han podido buscar los municipios. Es posible que el servicio esté saturado; inténtalo de nuevo en unos minutos.');
         return of([]);
-      }
-      return this.tiempoService.getListaMunicipios(nombre).pipe(
-        tap(() => this.errorMunicipios.set(false)),
-        catchError(err => {
-          this.errorMunicipios.set(true);
-          this.errorMunicipiosMsg.set(err.error?.message ?? 'Error al buscar municipios.');
-          return of([]);
-        })
-      );
+      })
+    );
   }
-
 
   mostrarNombre(municipio: MunicipioDTO): string {
-      return municipio?.nombre ?? '';
+    return municipio?.nombre ?? '';
   }
-  
-  
 
   onSelectMunicipio() {
-      const municipio = this.myControl.value;
-      this.municipioSeleccionado.set(typeof municipio === 'string' ? null : municipio);
-      this.llamarServicio();
+    const municipio = this.myControl.value;
+    this.municipioSeleccionado.set(typeof municipio === 'string' ? null : municipio);
+    this.llamarServicio();
   }
 
-
   onSelectGrados(event: Event) {
-      const select = event.target as HTMLSelectElement;
-      this.gradosSeleccionados = select.value;
-      this.llamarServicio();
+    const select = event.target as HTMLSelectElement;
+    this.gradosSeleccionados = select.value;
+    this.llamarServicio();
   }
 
   private llamarServicio() {
@@ -121,20 +116,19 @@ export class TiempoComponent implements OnInit {
           this.prediccionError.set(false);
         },
         error: (err) => {
-          console.error('Error al obtener la predicción del tiempo', err);
           this.prediccion.set(null);
           this.prediccionError.set(true);
-          this.prediccionErrorMsg.set(err.error.message);
+          this.prediccionErrorMsg.set(err.error?.message ?? 'No se ha podido obtener la predicción. Es posible que el servicio esté saturado; inténtalo de nuevo en unos minutos.');
         }
       });
     }
   }
 
   private getIdMunicipioActual(): string | null {
-      const municipio = this.myControl.value;
-      return typeof municipio === 'string' ? null : municipio?.id_old ?? null;
+    const municipio = this.myControl.value;
+    return typeof municipio === 'string' ? null : municipio?.id_old ?? null;
   }
-  
+
   private calcularFechaManana(): string {
     const manana = new Date();
     manana.setDate(manana.getDate() + 1);
@@ -144,6 +138,5 @@ export class TiempoComponent implements OnInit {
       month: 'long'
     });
     return texto.charAt(0).toUpperCase() + texto.slice(1);
+  }
 }
-}
-

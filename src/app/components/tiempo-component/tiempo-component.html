@@ -26,6 +26,8 @@
   </div>
 </div>
 
+
+
 @if (prediccion(); as p) {
   <div class="container-in">
     <h3 class="subtitulo">{{ municipioSeleccionado()?.nombre }} — {{ fechaManana }}</h3>
@@ -109,6 +111,10 @@
 } @else if (prediccionError()) {
   <div class="container-in container-in--error">
     <p class="mensaje-error">{{ prediccionErrorMsg() }}</p>
+  </div>
+} @else if (errorMunicipios()){
+  <div class="container-in container-in--error">
+    <p class="mensaje-error">{{ errorMunicipiosMsg() }}</p>
   </div>
 } @else {
   <div class="container-in container-in--vacio">
