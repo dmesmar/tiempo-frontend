@@ -1,0 +1,117 @@
+<div class="title"><span>Radar meteorológico</span></div>
+<div class="centered">
+  <div class="container">
+    <mat-form-field>
+        <mat-label>Municipio</mat-label>
+        <input type="text" 
+              placeholder="Busca tu municipio"
+              aria-label="Municipio"
+              matInput
+              [formControl]="myControl"
+              [matAutocomplete]="auto">
+        <mat-autocomplete #auto="matAutocomplete" [displayWith]="mostrarNombre" (optionSelected)="onSelectMunicipio()">
+          @for (option of filteredOptions | async; track option.id_old) {
+            <mat-option [value]="option">{{option.nombre}}</mat-option>
+          }
+        </mat-autocomplete>
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Grados</mat-label>
+      <select matNativeControl (change)="onSelectGrados($event)">
+      <option value="0"></option>
+      <option value="1">°C</option>
+      <option value="2">°F</option>
+    </select>
+    </mat-form-field>
+  </div>
+</div>
+
+@if (prediccion(); as p) {
+  <div class="container-in">
+    <h3 class="subtitulo">{{ municipioSeleccionado()?.nombre }} — {{ fechaManana }}</h3>
+
+    <div class="temperatura">
+      <div class="temperaturaNumero">{{ p.mediaTemperatura }} {{ p.unidadTemperatura === 'G_FAH' ? '°F' : '°C' }}</div>
+      <div class="derecha">
+      <span class="derecha-titulo">Ver precipitaciones</span>
+      @if (existeGrupo1(p)) {
+        <button class="toggle" (click)="toggleGrupo(1)">Todo el día</button>
+      }
+      @if (existeGrupo2(p)) {
+        <button class="toggle" (click)="toggleGrupo(2)">Cada 12 horas</button>
+      }
+      @if (existeGrupo3(p)) {
+        <button class="toggle" (click)="toggleGrupo(3)">Cada 6 horas</button>
+      }
+      </div>
+    </div>
+
+    <div>
+      @if (grupoVisible()[1]) {
+        <div class="probabilidad">
+          <div class="probabilidad_fila">
+            @for (precip of filtrarGrupo(p, 1); track precip.periodo) {
+              <span class="probabilidad_valor">{{ precip.value }}%</span>
+            }
+          </div>
+          <div class="probabilidad_linea">
+            @for (precip of filtrarGrupo(p, 1); track precip.periodo) {
+              <span class="probabilidad_marca-wrap"><span class="probabilidad_marca"></span></span>
+            }
+          </div>
+          <div class="probabilidad_fila">
+            @for (precip of filtrarGrupo(p, 1); track precip.periodo) {
+              <span class="probabilidad_periodo">{{ precip.periodo }}</span>
+            }
+          </div>
+        </div>
+      }
+      @if (grupoVisible()[2]) {
+        <div class="probabilidad">
+          <div class="probabilidad_fila">
+            @for (precip of filtrarGrupo(p, 2); track precip.periodo) {
+              <span class="probabilidad_valor">{{ precip.value }}%</span>
+            }
+          </div>
+          <div class="probabilidad_linea">
+            @for (precip of filtrarGrupo(p, 2); track precip.periodo) {
+              <span class="probabilidad_marca-wrap"><span class="probabilidad_marca"></span></span>
+            }
+          </div>
+          <div class="probabilidad_fila">
+            @for (precip of filtrarGrupo(p, 2); track precip.periodo) {
+              <span class="probabilidad_periodo">{{ precip.periodo }}</span>
+            }
+          </div>
+        </div>
+      }
+      @if (grupoVisible()[3]) {
+        <div class="probabilidad">
+          <div class="probabilidad_fila">
+            @for (precip of filtrarGrupo(p, 3); track precip.periodo) {
+              <span class="probabilidad_valor">{{ precip.value }}%</span>
+            }
+          </div>
+          <div class="probabilidad_linea">
+            @for (precip of filtrarGrupo(p, 3); track precip.periodo) {
+              <span class="probabilidad_marca-wrap"><span class="probabilidad_marca"></span></span>
+            }
+          </div>
+          <div class="probabilidad_fila">
+            @for (precip of filtrarGrupo(p, 3); track precip.periodo) {
+              <span class="probabilidad_periodo">{{ precip.periodo }}</span>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+} @else if (prediccionError()) {
+  <div class="container-in container-in--error">
+    <p class="mensaje-error">{{ prediccionErrorMsg() }}</p>
+  </div>
+} @else {
+  <div class="container-in container-in--vacio">
+    <p class="mensaje-vacio">Elige un municipio para ver la previsión de mañana.</p>
+  </div>
+}
