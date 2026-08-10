@@ -4,7 +4,7 @@ import { TiempoService } from '../../service/tiempo-service';
 import { MunicipioDTO } from '../../models/municipio/municipio-model';
 import {FormControl, FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {Observable, of} from 'rxjs';
-import {catchError, debounceTime, distinctUntilChanged, map, startWith, switchMap} from 'rxjs/operators';
+import {catchError, debounceTime, distinctUntilChanged, map, startWith, switchMap, tap} from 'rxjs/operators';
 import {AsyncPipe} from '@angular/common';
 import {MatAutocompleteModule} from '@angular/material/autocomplete';
 import {MatInputModule} from '@angular/material/input';
@@ -27,8 +27,10 @@ export class TiempoComponent implements OnInit {
   private tiempoService = inject(TiempoService);
   protected readonly municipios = signal<MunicipioDTO[]>([]);
   protected readonly prediccion = signal<PrediccionDTO | null>(null);
+  protected readonly errorMunicipios = signal<boolean>(false);
+  protected readonly errorMunicipiosMsg = signal<string>('');
   protected readonly prediccionError = signal<boolean>(false);
-  protected readonly prediccionErrorMsg = signal<String>("");
+  protected readonly prediccionErrorMsg = signal<string>('');
   protected readonly municipioSeleccionado = signal<MunicipioDTO | null>(null);
   protected readonly fechaManana = this.calcularFechaManana();
   myControl = new FormControl<string | MunicipioDTO | null>('');
@@ -78,13 +80,11 @@ export class TiempoComponent implements OnInit {
       if (!nombre) {
         return of([]);
       }
-      this.prediccionError.set(false);
-      
       return this.tiempoService.getListaMunicipios(nombre).pipe(
+        tap(() => this.errorMunicipios.set(false)),
         catchError(err => {
-          console.error('Error al buscar municipios', err);
-          this.prediccionError.set(true);
-          this.prediccionErrorMsg.set(err.error.message);
+          this.errorMunicipios.set(true);
+          this.errorMunicipiosMsg.set(err.error?.message ?? 'Error al buscar municipios.');
           return of([]);
         })
       );
