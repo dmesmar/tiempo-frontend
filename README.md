@@ -1,59 +1,31 @@
-# Front
+# Tiempo — Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.1.3.
+Interfaz en Angular para consultar la predicción meteorológica de cualquier municipio de España. Se conecta al backend de Tiempo (https://github.com/dmesmar/tiempo-backend).
 
-## Development server
+## Ejecución
 
-To start a local development server, run:
+### Requisitos previos
 
-```bash
-ng serve
-```
+- Docker
+- El backend de Tiempo corriendo en `http://localhost:8081` (ver instrucciones en su propio repositorio)
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+### Arrancar el contenedor
 
 ```bash
-ng generate component component-name
+docker run -p 8080:80 dmesmar/tiempo-frontend:latest
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+La aplicación quedará disponible en `http://localhost:8080`.
 
-```bash
-ng generate --help
-```
+## Funcionalidad
 
-## Building
+- Búsqueda de municipio con autocompletado (Angular Material)
+- Selección de unidad de temperatura (Celsius / Fahrenheit)
+- Cualquier cambio en municipio o unidad refresca automáticamente la predicción
+- Visualización de la probabilidad de precipitación agrupada por franjas horarias (día completo, mañana/tarde, o tramos de 6 horas), según la granularidad disponible
 
-To build the project run:
+## Arquitectura
 
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- `components/tiempo-component`: componente principal, orquesta el buscador, el selector de unidad y el resultado
+- `service/tiempo-service`: comunicación con el backend
+- `models`: interfaces TypeScript que reflejan los DTOs del backend
