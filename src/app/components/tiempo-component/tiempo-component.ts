@@ -9,6 +9,7 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { PrecipitacionDTO, PrediccionDTO } from '../../models/prediccion/prediccion-model';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 @Component({
   selector: 'app-tiempo-component',
@@ -18,6 +19,7 @@ import { PrecipitacionDTO, PrediccionDTO } from '../../models/prediccion/predicc
     MatInputModule,
     MatAutocompleteModule,
     ReactiveFormsModule,
+    MatProgressSpinnerModule,
     AsyncPipe,
   ],
   templateUrl: './tiempo-component.html',
@@ -35,6 +37,7 @@ export class TiempoComponent implements OnInit {
   protected readonly municipioSeleccionado = signal<MunicipioDTO | null>(null);
   protected readonly fechaManana = this.calcularFechaManana();
   myControl = new FormControl<string | MunicipioDTO | null>('');
+  protected readonly cargando = signal<boolean>(false);
   protected grupoVisible = signal<Record<number, boolean>>({ 1: false, 2: false, 3: false });
 
   protected gradosSeleccionados: string | null = null;
@@ -76,17 +79,22 @@ export class TiempoComponent implements OnInit {
   }
 
   private buscarMunicipios(nombre: string): Observable<MunicipioDTO[]> {
-    if (!nombre) {
-      return of([]);
-    }
-    return this.tiempoService.getListaMunicipios(nombre).pipe(
-      tap(() => this.errorMunicipios.set(false)),
-      catchError(err => {
-        this.errorMunicipios.set(true);
-        this.errorMunicipiosMsg.set(err.error?.message ?? 'No se han podido buscar los municipios. Es posible que el servicio esté saturado; inténtalo de nuevo en unos minutos.');
+      if (!nombre) {
         return of([]);
-      })
-    );
+      }
+      this.cargando.set(true);
+      return this.tiempoService.getListaMunicipios(nombre).pipe(
+        tap(() => {
+          this.errorMunicipios.set(false);
+          this.cargando.set(false);
+        }),
+        catchError(err => {
+          this.errorMunicipios.set(true);
+          this.errorMunicipiosMsg.set(err.error?.message ?? 'No se han podido buscar los municipios. Es posible que el servicio esté saturado; inténtalo de nuevo en unos minutos.');
+          this.cargando.set(false);
+          return of([]);
+        })
+      );
   }
 
   mostrarNombre(municipio: MunicipioDTO): string {
@@ -108,20 +116,24 @@ export class TiempoComponent implements OnInit {
   private llamarServicio() {
     let idMunicipio = this.getIdMunicipioActual();
     if (idMunicipio) {
-      let grado = this.gradosSeleccionados;
-      if (!grado) grado = "0";
-      this.tiempoService.getPrediccion(idMunicipio, parseInt(grado)).subscribe({
-        next: (respuesta) => {
-          this.prediccion.set(respuesta);
-          this.prediccionError.set(false);
-        },
-        error: (err) => {
-          this.prediccion.set(null);
-          this.prediccionError.set(true);
-          this.prediccionErrorMsg.set(err.error?.message ?? 'No se ha podido obtener la predicción. Es posible que el servicio esté saturado; inténtalo de nuevo en unos minutos.');
-        }
-      });
-    }
+        let grado = this.gradosSeleccionados;
+        if (!grado) grado = "0";
+        this.cargando.set(true);
+        this.tiempoService.getPrediccion(idMunicipio, parseInt(grado)).subscribe({
+          next: (respuesta) => {
+            this.prediccion.set(respuesta);
+            this.prediccionError.set(false);
+            this.cargando.set(false);
+          },
+          error: (err) => {
+            console.error('Error al obtener la predicción del tiempo', err);
+            this.prediccion.set(null);
+            this.prediccionError.set(true);
+            this.prediccionErrorMsg.set(err.error?.message ?? 'No se ha podido obtener la predicción. Es posible que el servicio esté saturado; inténtalo de nuevo en unos minutos.');
+            this.cargando.set(false);
+          }
+        });
+      }
   }
 
   private getIdMunicipioActual(): string | null {

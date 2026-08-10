@@ -27,7 +27,11 @@
 </div>
 
 
-
+@if (cargando()) {
+  <div class="spinner-wrap">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+}
 @if (prediccion(); as p) {
   <div class="container-in">
     <h3 class="subtitulo">{{ municipioSeleccionado()?.nombre }} — {{ fechaManana }}</h3>

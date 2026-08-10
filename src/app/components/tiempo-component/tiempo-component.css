@@ -155,3 +155,10 @@ hr {
     font-weight: 600;
     font-size: x-large;
 }
+
+.spinner-wrap {
+    display: flex;
+    justify-content: center;
+    margin: 1.5rem 0;
+}
+
